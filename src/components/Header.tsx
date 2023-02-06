@@ -6,6 +6,7 @@ export function Header() {
   const { state, setState } = useContext(MyContext);
 
   function logout() {
+    localStorage.removeItem("oauth");
     setState(!state);
   }
   return (

@@ -8,6 +8,7 @@ import { Md5 } from "md5-typescript";
 type Inputs = {
   user_name: string;
   user_password: string;
+  permission?: string;
 };
 
 export function Login() {
@@ -33,7 +34,12 @@ export function Login() {
               user.user_password === Md5.init(Md5.init(data.user_password))
             ) {
               setMessage("");
-              setState(!state);
+              const oauth = new Object({
+                name: user.user_name,
+                permission: user.permission,
+                logged: true,
+              });
+              localStorage.setItem("oauth", JSON.stringify(oauth));
             } else {
               setMessage("Usuario ou senha invalidos");
               await new Promise((r) => setTimeout(r, 3000));
@@ -45,6 +51,13 @@ export function Login() {
       console.log(error);
     }
   };
+
+  let storedArray = localStorage.getItem("oauth");
+  const oauth = JSON.parse(storedArray!);
+
+  if (oauth) {
+    setState(!state);
+  }
 
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-4">
