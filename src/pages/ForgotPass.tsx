@@ -1,8 +1,9 @@
 import { api } from "../api/service";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Md5 } from "md5-typescript";
+import MyContext from "../context/loggedContext";
 
 type Inputs = {
   id?: number;
@@ -11,6 +12,7 @@ type Inputs = {
 };
 
 export function ForgotPass() {
+  const { setState, state } = useContext(MyContext);
   const [message, setMessage] = useState<String>("");
   const [response, setResponse] = useState(false);
 
@@ -67,8 +69,16 @@ export function ForgotPass() {
     }
   };
 
+  let storedArray = localStorage.getItem("oauth");
+  const oauth = JSON.parse(storedArray!);
+
+  if (oauth) {
+    setState(!state);
+  }
+
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-4">
+      {state === true && <Navigate to="/home" replace={true} />}
       {response === true && <Navigate to="/login" replace={true} />}
       <form
         onSubmit={handleSubmit(onSubmit)}
