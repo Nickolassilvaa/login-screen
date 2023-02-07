@@ -1,26 +1,41 @@
-import { api } from "../api/service";
-import { useForm, SubmitHandler } from "react-hook-form";
 import { useContext, useState } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import MyContext from "../context/loggedContext";
 import { Link, Navigate } from "react-router-dom";
 import { Md5 } from "md5-typescript";
-import MyContext from "../context/loggedContext";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { api } from "../api/service";
+import LoadingSpin from "react-loading-spin";
+
+const schema = z.object({
+  user_name: z.string().min(1, "Campo Obrigatório"),
+  user_password: z.string().min(1, "Campo Obrigatório"),
+  user_passwordConfirm: z.string().min(1, "Campo Obrigatório"),
+});
+
+type InputsType = z.infer<typeof schema>;
 
 type Inputs = {
   id?: number;
   user_name: string;
   user_password: string;
+  user_passwordConfirm: string;
 };
 
 export function ForgotPass() {
   const { setState, state } = useContext(MyContext);
   const [message, setMessage] = useState<String>("");
+  const [messagePass, setMessagePass] = useState<String>("");
   const [response, setResponse] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Inputs>();
+  } = useForm<InputsType>({
+    resolver: zodResolver(schema),
+  });
 
   async function updateUser(data: Inputs) {
     api
@@ -47,11 +62,20 @@ export function ForgotPass() {
           users.map((user: Inputs) => {
             if (user.user_name === data.user_name) {
               const passHash = Md5.init(Md5.init(data.user_password));
-              console.log(passHash);
+              const passHashConfirm = Md5.init(
+                Md5.init(data.user_passwordConfirm)
+              );
+
+              if (passHash !== passHashConfirm) {
+                setMessagePass("Senha diferente!");
+                return;
+              }
+
               if (user.user_password === passHash) {
                 setMessage("Senha igual a anterior, tente outra!");
                 return;
               }
+
               data = {
                 ...user,
                 user_password: Md5.init(Md5.init(data.user_password)),
@@ -75,7 +99,6 @@ export function ForgotPass() {
   if (oauth) {
     setState(!state);
   }
-
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center gap-4">
       {state === true && <Navigate to="/home" replace={true} />}
@@ -97,16 +120,14 @@ export function ForgotPass() {
               type="text"
               defaultValue=""
               placeholder="John Joe"
-              {...register("user_name", { required: true })}
+              {...register("user_name")}
               className="rounded-full bg-transparent outline-none pb-2 px-4 w-full"
             />
           </fieldset>
           <div className="h-[5px]">
-            {errors.user_name && (
-              <span className="text-sm text-red-800 font-bold p-0 m-0">
-                *Campo obrigatório!
-              </span>
-            )}
+            <span className="text-sm text-red-800 font-bold p-0 m-0">
+              {errors?.user_name?.message}
+            </span>
           </div>
         </div>
         <div>
@@ -119,16 +140,36 @@ export function ForgotPass() {
               type="password"
               defaultValue=""
               placeholder="*********"
-              {...register("user_password", { required: true })}
+              {...register("user_password")}
               className="rounded-full bg-transparent outline-none pb-2 px-4 w-full"
             />
           </fieldset>
           <div className="h-[5px]">
-            {errors.user_name && (
-              <span className="text-sm text-red-800 font-bold p-0 m-0">
-                *Campo obrigatório!
-              </span>
-            )}
+            <span className="text-sm text-red-800 font-bold p-0 m-0">
+              {errors?.user_password?.message}
+            </span>
+          </div>
+        </div>
+        <div>
+          <fieldset className="border border-solid rounded-full border-slate-700 overflow-hidden w-[300px] ">
+            <legend className="text-sm ml-1">
+              <label htmlFor="pass">Confirmar senha</label>
+            </legend>
+            <input
+              id="passConfirm"
+              type="password"
+              defaultValue=""
+              placeholder="*********"
+              {...register("user_passwordConfirm")}
+              className="rounded-full bg-transparent outline-none pb-2 px-4 w-full"
+            />
+          </fieldset>
+          <div className="h-[5px]">
+            <span className="text-sm text-red-800 font-bold p-0 m-0">
+              {errors.user_passwordConfirm
+                ? errors?.user_passwordConfirm?.message
+                : `${messagePass}`}
+            </span>
           </div>
         </div>
 
